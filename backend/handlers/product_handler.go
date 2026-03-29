@@ -22,7 +22,14 @@ import (
 
 func GetProduct(c *gin.Context) {
 	var products []models.Product
-	config.DB.Find(&products)
+	keyword := c.Query("q")
+	if keyword != "" {
+		config.DB.
+			Where("name ILIKE ?", "%"+keyword+"%").
+			Find(&products)
+	} else {
+		config.DB.Find(&products)
+	}
 	c.JSON(http.StatusOK, products)
 }
 
@@ -32,35 +39,78 @@ func GetCart(c *gin.Context) {
 	c.JSON(http.StatusOK, cart)
 }
 
-func AddToCart(c *gin.Context) {
-	var item models.CartItem
+// func AuthMiddleware() gin.HandlerFunc {
+// 	return func(c *gin.Context) {
 
-	// รับ JSON
-	if err := c.ShouldBindJSON(&item); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-	// 👉 logic: ถ้ามีสินค้าแล้ว → เพิ่ม quantity
-	// found := false
-	// for i, v := range cart {
-	// 	if v.ProductID == item.ProductID {
-	// 		cart[i].Quantity += item.Quantity
-	// 		found = true
-	// 		break
-	// 	}
-	// }
+// 		authHeader := c.GetHeader("Authorization")
 
-	// if !found {
-	// 	cart = append(cart, item)
-	// }
+// 		if authHeader == "" {
+// 			c.AbortWithStatusJSON(401, gin.H{"error": "no token"})
+// 			return
+// 		}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "added to cart",
-		"cart":    cart,
-	})
-}
+// 		// 🔥 ตัด Bearer ออก
+// 		tokenStr := strings.Replace(authHeader, "Bearer ", "", 1)
+
+// 		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+// 			return jwtKey, nil
+// 		})
+
+// 		if err != nil || !token.Valid {
+// 			c.AbortWithStatusJSON(401, gin.H{"error": "invalid token"})
+// 			return
+// 		}
+
+// 		claims := token.Claims.(jwt.MapClaims)
+
+// 		// 🔥 set user_id
+// 		c.Set("user_id", uint(claims["user_id"].(float64)))
+
+// 		c.Next()
+// 	}
+// }
+
+// func AddToCart(c *gin.Context) {
+// 	userID := c.MustGet("user_id").(uint)
+// 	var body struct {
+// 		ProductID uint `json:"product_id"`
+// 		Qty       int  `json:"qty"`
+// 	}
+
+// 	c.BindJSON(&body)
+
+// 	var cart models.Cart
+
+// 	// 1. หา cart ของ user
+// 	if err := config.DB.Where("user_id = ?", userID).First(&cart).Error; err != nil {
+// 		// ถ้าไม่มี → create ใหม่
+// 		cart = models.Cart{UserID: 1}
+// 		config.DB.Create(&cart)
+// 	}
+
+// 	var item models.CartItem
+
+// 	// 2. check ว่ามีสินค้านี้ใน cart ไหม
+// 	err := config.DB.
+// 		Where("cart_id = ? AND product_id = ?", cart.ID, body.ProductID).
+// 		First(&item).Error
+
+// 	if err == nil {
+// 		// มีแล้ว → เพิ่มจำนวน
+// 		item.Quantity += body.Qty
+// 		config.DB.Save(&item)
+// 	} else {
+// 		// ยังไม่มี → create ใหม่
+// 		item = models.CartItem{
+// 			CartID:    cart.ID,
+// 			ProductID: body.ProductID,
+// 			Quantity:  body.Qty,
+// 		}
+// 		config.DB.Create(&item)
+// 	}
+
+// 	c.JSON(200, gin.H{"message": "added to cart"})
+// }
 
 // GET /users/:id
 // func GetUserByID(c *gin.Context) {

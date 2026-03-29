@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import ProductCard from "@/app/components/data/ProductCard";
 import { getProducts, getProductsCart, postCartProducts } from "./service/product";
 import { useCartStore } from "@/app/store/cart";
+import { useProductStore } from "./store/product";
 
 interface Product {
   id: number;
@@ -13,14 +14,16 @@ interface Product {
 }
 
 export default function Home() {
-  const [products, setProducts] = useState<Product[]>([]);
+  // const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<Product[]>([]);
   const addCountCart = useCartStore((s) => s.addToCart);
+  const addToProduct = useProductStore((s) => s.addToProduct);
+  const productList = useProductStore((s) => s.productList);
 
   const fetchProduct = async () => {
     try {
-      let { data } = await getProducts()
-      setProducts(data)
+      let { data } = await getProducts("")
+      addToProduct(data)
     } catch (err) {
 
     }
@@ -48,8 +51,8 @@ export default function Home() {
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto" }}>
       <Row gutter={[16, 16]}>
-        {products.map((p) => (
-          <Col xs={24} sm={12} md={8} lg={6} key={p.id}>
+        {productList.map((p, i: number) => (
+          <Col xs={24} sm={12} md={8} lg={6} key={i}>
             <ProductCard product={p} onAdd={addToCart} />
           </Col>
         ))}
